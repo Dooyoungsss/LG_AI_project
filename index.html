@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>세이프딜 AI — 거래 전 사기 예방</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182334;
+      --muted: #778396;
+      --line: #e9edf3;
+      --surface: #fff;
+      --canvas: #f5f7fb;
+      --blue: #4667f5;
+      --blue-dark: #3451d1;
+      --mint: #d9f7ed;
+      --green: #138967;
+      --nav-width: 244px;
+      font-family: Inter, Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); }
+    button, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; }
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; z-index: 5; display: flex; flex-direction: column;
+      width: var(--nav-width); padding: 28px 18px 20px; background: var(--surface);
+      border-right: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px; font-weight: 800; font-size: 18px; letter-spacing: -.6px; }
+    .brand-mark { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; color: white; background: linear-gradient(145deg, #5979ff, #3554de); box-shadow: 0 5px 13px #4667f536; }
+    .brand-mark svg { width: 20px; height: 20px; }
+    .brand small { display: block; margin-top: 2px; color: #8a95a6; font-size: 9px; font-weight: 700; letter-spacing: 1.4px; }
+    .nav-label { margin: 42px 10px 12px; color: #a2aab7; font-size: 10px; font-weight: 800; letter-spacing: 1.1px; }
+    .nav { display: grid; gap: 5px; }
+    .nav button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 11px; border: 0; border-radius: 10px; color: #718096; background: transparent; text-align: left; font-size: 13px; font-weight: 650; transition: .18s ease; }
+    .nav button:hover { color: var(--ink); background: #f5f7fb; }
+    .nav button.active { color: var(--blue); background: #eef1ff; }
+    .nav svg { width: 18px; height: 18px; flex: 0 0 auto; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .nav .nav-count { margin-left: auto; padding: 3px 7px; border-radius: 20px; color: #778396; background: #f0f2f6; font-size: 10px; }
+    .sidebar-bottom { margin-top: auto; }
+    .help-card { padding: 16px; border: 1px solid #e9edf6; border-radius: 13px; background: linear-gradient(145deg, #fafbff, #f4f6ff); }
+    .help-card strong { display: block; margin-bottom: 6px; font-size: 12px; }
+    .help-card p { margin: 0 0 12px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .help-card button { padding: 0; border: 0; color: var(--blue); background: none; font-size: 11px; font-weight: 750; }
+    .profile { display: flex; align-items: center; gap: 10px; margin-top: 17px; padding: 15px 4px 0; border-top: 1px solid var(--line); }
+    .avatar { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; color: #465bba; background: #e9edff; font-size: 12px; font-weight: 800; }
+    .profile strong { display: block; font-size: 11px; }
+    .profile span { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    main { max-width: 1520px; min-height: 100vh; margin-left: var(--nav-width); padding: 0 48px 54px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; height: 80px; border-bottom: 1px solid var(--line); }
+    .breadcrumb { color: #929cad; font-size: 12px; }
+    .breadcrumb b { color: #49576b; font-weight: 700; }
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .top-date { color: #8591a2; font-size: 11px; }
+    .icon-button { position: relative; display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--line); border-radius: 11px; color: #627086; background: white; }
+    .icon-button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .notification-dot { position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; border: 1px solid white; border-radius: 50%; background: #f27b63; }
+    .content { max-width: 1150px; margin: 0 auto; }
+    .welcome { display: flex; align-items: flex-end; justify-content: space-between; margin: 31px 0 24px; }
+    .eyebrow { margin-bottom: 9px; color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: 1.4px; }
+    h1 { margin: 0; font-size: clamp(23px, 2.4vw, 30px); letter-spacing: -1.2px; }
+    .welcome p { margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .secure-pill { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid #d8eee6; border-radius: 99px; color: #288669; background: #f3fbf7; font-size: 10px; font-weight: 750; white-space: nowrap; }
+    .secure-pill span { width: 6px; height: 6px; border-radius: 50%; background: #35b889; box-shadow: 0 0 0 3px #35b88920; }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1.58fr) minmax(260px, .9fr); gap: 16px; }
+    .scan-card { position: relative; overflow: hidden; min-height: 365px; padding: 27px 29px 25px; border-radius: 18px; color: white; background: #222f70; box-shadow: 0 12px 30px #27367520; }
+    .scan-card::before, .scan-card::after { position: absolute; content: ""; border: 1px solid #ffffff12; border-radius: 50%; pointer-events: none; }
+    .scan-card::before { top: -150px; right: -95px; width: 390px; height: 390px; }
+    .scan-card::after { top: -93px; right: -40px; width: 280px; height: 280px; }
+    .scan-content { position: relative; z-index: 1; }
+    .scan-kicker { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; color: #b9c6ff; font-size: 10px; font-weight: 750; letter-spacing: .9px; }
+    .scan-kicker svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .scan-card h2 { margin: 0; font-size: 23px; letter-spacing: -.9px; line-height: 1.4; }
+    .scan-card .subline { margin: 6px 0 19px; color: #c3cbed; font-size: 11px; line-height: 1.65; }
+    .input-wrap { padding: 13px; border: 1px solid #ffffff28; border-radius: 13px; background: #141e5369; backdrop-filter: blur(5px); }
+    .input-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+    .input-top label { color: #e7eaff; font-size: 10px; font-weight: 700; }
+    .demo-badge { padding: 4px 7px; border-radius: 20px; color: #d8deff; background: #ffffff15; font-size: 9px; }
+    textarea { display: block; width: 100%; min-height: 77px; padding: 11px 12px; resize: vertical; border: 1px solid #ffffff20; border-radius: 9px; outline: none; color: white; background: #101943; font-size: 11px; line-height: 1.7; transition: border-color .18s; }
+    textarea::placeholder { color: #929dc8; }
+    textarea:focus { border-color: #a9b6ff; }
+    .input-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 11px; }
+    .privacy-note { display: flex; align-items: center; gap: 5px; color: #aeb8e0; font-size: 9px; }
+    .privacy-note svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+    .button-row { display: flex; align-items: center; gap: 7px; }
+    .sample-button { padding: 9px 10px; border: 1px solid #ffffff35; border-radius: 8px; color: #e1e5ff; background: #ffffff0c; font-size: 10px; font-weight: 700; }
+    .sample-button:hover { background: #ffffff18; }
+    .scan-button { display: inline-flex; align-items: center; gap: 7px; padding: 10px 13px; border: 0; border-radius: 8px; color: #233166; background: white; font-size: 10px; font-weight: 800; transition: transform .15s, box-shadow .15s; }
+    .scan-button:hover { transform: translateY(-1px); box-shadow: 0 5px 12px #0002; }
+    .scan-button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .result { display: none; margin-top: 12px; padding: 12px 14px; border: 1px solid #ffffff27; border-radius: 10px; background: #101943a8; animation: show .25s ease; }
+    .result.visible { display: block; }
+    .result-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .result-title { font-size: 11px; font-weight: 800; }
+    .result-score { font-size: 10px; font-weight: 800; }
+    .result ul { display: grid; gap: 5px; margin: 9px 0 0; padding-left: 16px; color: #d1d8f4; font-size: 10px; line-height: 1.45; }
+    .result-foot { margin-top: 9px; color: #aab5df; font-size: 9px; line-height: 1.5; }
+    @keyframes show { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .side-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 16px; }
+    .side-card, .panel { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+    .side-card { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 174px; padding: 20px; overflow: hidden; }
+    .side-card-header { display: flex; align-items: center; justify-content: space-between; color: #737f92; font-size: 10px; font-weight: 700; }
+    .side-card-header svg { width: 16px; height: 16px; fill: none; stroke: #8793a4; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .stat-value { margin-top: 17px; font-size: 27px; font-weight: 800; letter-spacing: -1px; }
+    .stat-value small { margin-left: 3px; color: #6f7b8c; font-size: 12px; font-weight: 650; }
+    .stat-caption { margin-top: 4px; color: #99a3b1; font-size: 10px; }
+    .trend { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; color: #1e9a76; font-size: 9px; font-weight: 750; }
+    .trend svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
+    .sparkline { position: absolute; right: 17px; bottom: 20px; width: 94px; height: 42px; }
+    .sparkline svg { width: 100%; height: 100%; overflow: visible; }
+    .sparkline polyline { fill: none; stroke: #8cd9bd; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .sparkline path { fill: url(#sparkFill); }
+    .stat-icon { position: absolute; right: 20px; bottom: 22px; display: grid; width: 35px; height: 35px; place-items: center; border-radius: 11px; color: #e57a5e; background: #fff1ec; }
+    .stat-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .section-row { display: flex; align-items: center; justify-content: space-between; margin: 28px 0 13px; }
+    .section-row h2 { margin: 0; font-size: 14px; letter-spacing: -.3px; }
+    .section-row a, .text-link { border: 0; color: var(--blue); background: none; text-decoration: none; font-size: 10px; font-weight: 750; }
+    .capabilities { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .capability { min-height: 124px; padding: 17px 16px; border: 1px solid var(--line); border-radius: 14px; background: white; transition: transform .18s, box-shadow .18s; }
+    .capability:hover { transform: translateY(-2px); box-shadow: 0 8px 20px #1c31570b; }
+    .cap-icon { display: grid; width: 32px; height: 32px; place-items: center; margin-bottom: 13px; border-radius: 10px; }
+    .cap-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .cap-icon.violet { color: #775eea; background: #f0edff; }
+    .cap-icon.blue { color: #4e78e8; background: #edf3ff; }
+    .cap-icon.orange { color: #e58c44; background: #fff4e8; }
+    .cap-icon.green { color: #299879; background: #eaf8f2; }
+    .capability strong { display: block; margin-bottom: 5px; font-size: 11px; }
+    .capability p { margin: 0; color: #8b96a6; font-size: 9px; line-height: 1.6; }
+    .bottom-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(260px, .8fr); gap: 14px; margin-top: 16px; }
+    .panel { padding: 19px 20px; }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .panel-title h3 { margin: 0; font-size: 12px; }
+    .panel-title span { color: #9aa4b1; font-size: 9px; }
+    .activity { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid #f0f2f6; }
+    .activity:first-of-type { border-top: 0; }
+    .activity-icon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; color: #5875d9; background: #eff2ff; }
+    .activity-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .activity strong { display: block; overflow: hidden; max-width: 220px; color: #465367; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .activity small { display: block; margin-top: 4px; color: #a1aab6; font-size: 9px; }
+    .status { padding: 5px 8px; border-radius: 20px; color: #278769; background: #edf8f3; font-size: 9px; font-weight: 750; white-space: nowrap; }
+    .status.warn { color: #c8782b; background: #fff5e9; }
+    .tip-panel { position: relative; overflow: hidden; border: 0; color: white; background: linear-gradient(140deg, #485fce, #323e91); }
+    .tip-panel::after { position: absolute; right: -29px; bottom: -72px; width: 160px; height: 160px; border: 1px solid #ffffff1c; border-radius: 50%; content: ""; }
+    .tip-panel .panel-title { color: #dce2ff; }
+    .tip-panel .panel-title span { color: #c3cdf7; }
+    .tip-label { display: inline-flex; align-items: center; gap: 6px; margin: 7px 0 11px; color: #dce2ff; font-size: 9px; font-weight: 750; letter-spacing: .5px; }
+    .tip-label svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    .tip-panel h4 { max-width: 230px; margin: 0; font-size: 15px; letter-spacing: -.5px; line-height: 1.55; }
+    .tip-panel p { max-width: 245px; margin: 8px 0 13px; color: #d0d7ff; font-size: 10px; line-height: 1.7; }
+    .tip-panel .text-link { position: relative; z-index: 1; padding: 0; color: white; }
+    .disclaimer { margin: 22px 0 0; color: #9aa4b2; text-align: center; font-size: 9px; line-height: 1.65; }
+    .toast { position: fixed; right: 24px; bottom: 24px; z-index: 10; padding: 12px 16px; border-radius: 10px; color: white; background: #202b43; box-shadow: 0 8px 22px #10182b30; font-size: 11px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: .2s ease; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .mobile-menu { display: none; }
+
+    @media (max-width: 1050px) {
+      main { padding-right: 28px; padding-left: 28px; }
+      .hero-grid { grid-template-columns: minmax(0, 1.35fr) minmax(235px, .8fr); }
+      .capability { padding: 15px 13px; }
+    }
+    @media (max-width: 780px) {
+      :root { --nav-width: 0px; }
+      .sidebar { position: static; width: auto; height: auto; padding: 15px 19px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { padding: 0; }
+      .sidebar .nav-label, .sidebar .nav, .sidebar-bottom { display: none; }
+      main { margin-left: 0; padding: 0 20px 35px; }
+      .topbar { height: 58px; }
+      .mobile-menu { display: grid; width: 34px; height: 34px; place-items: center; margin-right: auto; border: 0; color: #5e6b80; background: transparent; }
+      .mobile-menu svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+      .breadcrumb { margin-left: 7px; margin-right: auto; }
+      .top-date { display: none; }
+      .welcome { margin: 24px 0 19px; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .side-stack { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+      .side-card { min-height: 155px; padding: 16px; }
+      .bottom-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      main { padding-right: 14px; padding-left: 14px; }
+      .welcome { align-items: flex-start; gap: 10px; }
+      .welcome p { max-width: 290px; font-size: 11px; }
+      .secure-pill { margin-top: 17px; padding: 7px 9px; font-size: 9px; }
+      .scan-card { min-height: 0; padding: 22px 17px 17px; }
+      .scan-card h2 { font-size: 21px; }
+      .scan-card .subline { font-size: 10px; }
+      .input-wrap { padding: 10px; }
+      .input-actions { align-items: flex-start; flex-direction: column; }
+      .button-row { width: 100%; }
+      .sample-button { flex: 1; }
+      .scan-button { justify-content: center; flex: 1.2; }
+      .side-stack { gap: 10px; }
+      .side-card { min-height: 146px; padding: 13px; }
+      .side-card-header { font-size: 9px; }
+      .stat-value { font-size: 23px; }
+      .sparkline { right: 10px; bottom: 13px; width: 65px; }
+      .section-row { margin-top: 23px; }
+      .capabilities { grid-template-columns: 1fr 1fr; gap: 9px; }
+      .capability { min-height: 123px; padding: 14px 12px; }
+      .panel { padding: 16px 14px; }
+      .activity { grid-template-columns: 28px 1fr auto; gap: 8px; }
+      .activity strong { max-width: 175px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="주요 메뉴">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </span>
+        <span>세이프딜<small>AI TRANSACTION GUARD</small></span>
+      </div>
+      <div class="nav-label">WORKSPACE</div>
+      <nav class="nav">
+        <button class="active" type="button" data-nav="홈" aria-current="page"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1Z"/></svg>홈</button>
+        <button type="button" data-nav="거래 사전점검"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M11 8v6m-3-3h6"/></svg>거래 사전점검</button>
+        <button type="button" data-nav="분석 기록"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6"/></svg>분석 기록<span class="nav-count">3</span></button>
+        <button type="button" data-nav="안전 거래 가이드"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></svg>안전 거래 가이드</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="help-card">
+          <strong>안전한 거래, 함께 만들어요</strong>
+          <p>의심스러운 거래가 있다면 송금 전에 먼저 확인해 보세요.</p>
+          <button type="button" data-toast="안전 거래 가이드는 파일럿 화면 예시입니다.">안전 가이드 보기 →</button>
+        </div>
+        <div class="profile">
+          <div class="avatar" aria-hidden="true">민</div>
+          <div><strong>김민지</strong><span>안심 거래 이용자</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <button class="mobile-menu" type="button" aria-label="메뉴"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+        <div class="breadcrumb">세이프딜 <span aria-hidden="true">/</span> <b>대시보드</b></div>
+        <div class="top-actions">
+          <span class="top-date" id="today"></span>
+          <button class="icon-button" type="button" aria-label="알림" data-toast="새로운 알림이 없습니다.">
+            <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"/></svg><i class="notification-dot"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="welcome" aria-labelledby="welcome-title">
+          <div>
+            <div class="eyebrow">PRE-TRANSACTION AI GUARD</div>
+            <h1 id="welcome-title">안녕하세요, 민지님 👋</h1>
+            <p>거래하기 전 한 번 더 확인하면, 사기를 미리 막을 수 있어요.</p>
+          </div>
+          <div class="secure-pill"><span></span>AI 보호 시스템 가동 중</div>
+        </section>
+
+        <section class="hero-grid" aria-label="거래 점검과 보호 현황">
+          <article class="scan-card">
+            <div class="scan-content">
+              <div class="scan-kicker">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg>
+                거래 전 AI 사전점검
+              </div>
+              <h2>송금하기 전,<br>AI에게 먼저 물어보세요.</h2>
+              <p class="subline">판매자 메시지, 거래 URL, 상품 설명을 붙여넣으면<br>위험 신호를 빠르게 확인해 드려요.</p>
+              <div class="input-wrap">
+                <div class="input-top">
+                  <label for="transaction-input">거래 내용을 입력해 주세요</label>
+                  <span class="demo-badge">파일럿 데모</span>
+                </div>
+                <textarea id="transaction-input" maxlength="2000" placeholder="예: 카톡으로 연락 주세요. 안전결제 링크는 여기에 있어요.&#10;의심되는 URL이나 판매자 메시지를 붙여넣어 보세요."></textarea>
+                <div class="input-actions">
+                  <span class="privacy-note"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg>입력한 내용은 데모 분석에만 사용돼요</span>
+                  <div class="button-row">
+                    <button class="sample-button" id="sample-button" type="button">예시 입력</button>
+                    <button class="scan-button" id="scan-button" type="button">
+                      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4m-5-8v6m-3-3h6"/></svg>위험 신호 확인
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="result" id="scan-result" role="status" aria-live="polite"></div>
+            </div>
+          </article>
+
+          <div class="side-stack">
+            <article class="side-card">
+              <div class="side-card-header"><span>이번 달 사전 점검</span><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6"/></svg></div>
+              <div>
+                <div class="stat-value">24<small>건</small></div>
+                <div class="stat-caption">거래 전 위험 신호를 확인했어요</div>
+                <div class="trend"><svg viewBox="0 0 24 24"><path d="m4 16 6-6 4 4 6-8m-6 0h6v6"/></svg>안전 습관을 실천 중이에요</div>
+              </div>
+              <div class="sparkline" aria-hidden="true"><svg viewBox="0 0 100 45" preserveAspectRatio="none"><defs><linearGradient id="sparkFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8cd9bd" stop-opacity=".25"/><stop offset="1" stop-color="#8cd9bd" stop-opacity="0"/></linearGradient></defs><path d="M0 37 L15 31 L27 34 L42 19 L57 25 L70 14 L85 18 L100 5 L100 45 L0 45Z"/><polyline points="0,37 15,31 27,34 42,19 57,25 70,14 85,18 100,5"/></svg></div>
+            </article>
+            <article class="side-card">
+              <div class="side-card-header"><span>놓치기 쉬운 위험 신호</span><svg viewBox="0 0 24 24"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0ZM12 9v4m0 4h.01"/></svg></div>
+              <div>
+                <div class="stat-value">외부 메신저<small>유도</small></div>
+                <div class="stat-caption">플랫폼 밖 대화는 보호받기 어려워요</div>
+              </div>
+              <div class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01"/><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/></svg></div>
+            </article>
+          </div>
+        </section>
+
+        <section aria-labelledby="capabilities-title">
+          <div class="section-row">
+            <h2 id="capabilities-title">세이프딜 AI가 확인하는 것</h2>
+            <button class="text-link" type="button" data-toast="4가지 AI 점검 기능을 소개하는 파일럿 화면입니다.">기능 자세히 보기 →</button>
+          </div>
+          <div class="capabilities">
+            <article class="capability">
+              <div class="cap-icon violet"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h8m-8 4h8m-8 4h4"/></svg></div>
+              <strong>위조 문서 판별</strong><p>영수증·송장 이미지의<br>위조 흔적을 확인해요.</p>
+            </article>
+            <article class="capability">
+              <div class="cap-icon blue"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 15-5-5L5 19"/></svg></div>
+              <strong>사진 진위 검증</strong><p>도용되거나 합성된<br>거래 사진을 찾아요.</p>
+            </article>
+            <article class="capability">
+              <div class="cap-icon orange"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1 0l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7"/></svg></div>
+              <strong>피싱 링크 탐지</strong><p>외부 메신저 유도와<br>가짜 결제 링크를 살펴요.</p>
+            </article>
+            <article class="capability">
+              <div class="cap-icon green"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="m8 7 3 9m5-9-3 9m-5-10h8"/></svg></div>
+              <strong>사기 연관도 분석</strong><p>거래 패턴과 계정 간<br>연관 위험을 분석해요.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="bottom-grid" aria-label="최근 분석과 안전 팁">
+          <article class="panel">
+            <div class="panel-title"><h3>최근 분석 기록</h3><span>파일럿 예시 데이터</span></div>
+            <div class="activity">
+              <div class="activity-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10m-10 4h6"/></svg></div>
+              <div><strong>무선 이어폰 판매글 점검</strong><small>오늘 · 사기 위험 신호 없음</small></div>
+              <span class="status">낮은 위험</span>
+            </div>
+            <div class="activity">
+              <div class="activity-icon"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/></svg></div>
+              <div><strong>한정판 운동화 거래 메시지</strong><small>어제 · 외부 메신저 유도 감지</small></div>
+              <span class="status warn">확인 필요</span>
+            </div>
+          </article>
+          <article class="panel tip-panel">
+            <div class="panel-title"><h3>오늘의 안전 거래 팁</h3><span>01 / 04</span></div>
+            <div class="tip-label"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/></svg>거래 전 꼭 기억하세요</div>
+            <h4>플랫폼 밖으로 이동하자는 말,<br>한 번 더 의심해요.</h4>
+            <p>외부 메신저나 별도 링크로 유도하는 경우, 대화와 결제 기록이 보호되지 않을 수 있어요.</p>
+            <button class="text-link" type="button" data-toast="안전 거래 팁은 기획 시나리오 예시입니다.">안전 거래 가이드 보기 →</button>
+          </article>
+        </section>
+        <p class="disclaimer">본 화면은 서비스 기획 검토를 위한 UI 파일럿입니다. 위험 점검은 브라우저 내 예시 규칙으로 동작하며 실제 AI·외부 기관 API와 연동되어 있지 않습니다.<br>분석 결과만으로 거래 안전이 보장되지는 않으므로, 의심스러운 경우 송금하지 말고 플랫폼의 공식 안전결제를 이용하세요.</p>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const input = document.querySelector("#transaction-input");
+    const result = document.querySelector("#scan-result");
+    const toast = document.querySelector("#toast");
+    let toastTimer;
+
+    document.querySelector("#today").textContent = new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric", month: "long", day: "numeric", weekday: "short"
+    }).format(new Date());
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    document.querySelector("#sample-button").addEventListener("click", () => {
+      input.value = "카톡으로 연락 주세요. 시세보다 70% 저렴하게 판매합니다. 안전결제 링크에서 먼저 입금해 주세요: http://safe-pay.example.com";
+      input.focus();
+      result.classList.remove("visible");
+    });
+
+    document.querySelector("#scan-button").addEventListener("click", () => {
+      const text = input.value.trim();
+      if (!text) {
+        input.focus();
+        showToast("거래 메시지나 URL을 입력해 주세요.");
+        return;
+      }
+
+      const checks = [
+        { pattern: /카\s*톡|카카오톡|kakao|오픈채팅|텔레그램|telegram|라인으로|line으로|외부\s*메신저/i, message: "플랫폼 외부 메신저로 대화를 유도하는 표현이 있어요." },
+        { pattern: /https?:\/\/|www\./i, message: "외부 링크가 포함되어 있어요. 결제 전에 공식 도메인인지 확인하세요." },
+        { pattern: /시세.{0,12}(반값|[5-9]\s*0\s*%|[6-9]\s*할인)|([5-9]\s*0\s*%|[6-9]\s*할인).{0,12}시세|급처|파격\s*할인/i, message: "비정상적으로 낮은 가격이나 급매를 강조하고 있어요." },
+        { pattern: /선입금|먼저\s*입금|계좌\s*이체|안전결제\s*링크|에스크로\s*링크/i, message: "송금 또는 별도 안전결제를 서두르는 표현이 있어요." }
+      ];
+      const flags = checks.filter(check => check.pattern.test(text)).map(check => check.message);
+      const highRisk = flags.length >= 3;
+      const mediumRisk = flags.length > 0;
+      const title = highRisk ? "위험 신호가 여러 개 발견됐어요" : mediumRisk ? "거래 전 확인이 필요해요" : "뚜렷한 위험 신호가 보이지 않아요";
+      const color = highRisk ? "#ff9a84" : mediumRisk ? "#ffd07a" : "#8fe0bf";
+      const score = highRisk ? "주의 높음" : mediumRisk ? "주의 필요" : "낮은 위험 신호";
+      const advice = highRisk
+        ? "송금을 멈추고 플랫폼 내 공식 안전결제를 이용하세요. 판매자에게 추가 확인을 요청하세요."
+        : mediumRisk
+          ? "링크를 누르거나 송금하기 전에 판매자와 결제 정보를 다시 확인하세요."
+          : "이 결과만으로 안전을 보장할 수 없어요. 판매자 이력과 공식 결제 수단을 함께 확인하세요.";
+      const findings = flags.length
+        ? `<ul>${flags.map(flag => `<li>${flag}</li>`).join("")}</ul>`
+        : "<ul><li>입력된 내용에서 데모 규칙에 해당하는 주요 표현을 찾지 못했어요.</li></ul>";
+      result.innerHTML = `<div class="result-head"><span class="result-title">${title}</span><span class="result-score" style="color:${color}">${score}</span></div>${findings}<div class="result-foot">${advice}<br>※ 브라우저 예시 규칙에 따른 데모 결과이며 실제 AI 분석이 아닙니다.</div>`;
+      result.classList.add("visible");
+    });
+
+    document.querySelectorAll("[data-toast]").forEach(button => {
+      button.addEventListener("click", () => showToast(button.dataset.toast));
+    });
+    document.querySelectorAll("[data-nav]").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-nav]").forEach(item => {
+          item.classList.remove("active");
+          item.removeAttribute("aria-current");
+        });
+        button.classList.add("active");
+        button.setAttribute("aria-current", "page");
+        if (button.dataset.nav === "거래 사전점검") {
+          document.querySelector("#transaction-input").focus();
+          document.querySelector(".scan-card").scrollIntoView({ behavior: "smooth", block: "center" });
+        } else if (button.dataset.nav !== "홈") {
+          showToast(`${button.dataset.nav} 화면은 파일럿 예시입니다.`);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
